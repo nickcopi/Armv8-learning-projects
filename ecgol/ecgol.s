@@ -1,6 +1,6 @@
 .data
 
-board_size = 16
+board_size = 32
 board:
 	.space board_size * board_size
 
@@ -181,7 +181,7 @@ _print_board:
 
 			//see about printing new line
 			mov x7, x5
-			and x7, x7, #15
+			and x7, x7, #31
 			cmp x7, #0
 			b.ne .check_loop
 			ldr x1, =newline
@@ -196,21 +196,32 @@ _print_board:
 _init_board:
 	mov x7,lr
 	mov w5,#1
-	//set board at 3,3
-	mov x8,#3
+	//set board
+	mov x8,#2
 	mov x9,#1
 	bl _board_at
 	strb w5,[x10]
-	//set board at 3,4
+	//set board 
 	mov x8,#3
 	mov x9,#2
 	bl _board_at
 	strb w5,[x10]
-	//set board at 3,5
+	//set board
+	mov x8,#1
+	mov x9,#3
+	bl _board_at
+	strb w5,[x10]
+	//set board
+	mov x8,#2
+	mov x9,#3
+	bl _board_at
+	strb w5,[x10]
+	//set board
 	mov x8,#3
 	mov x9,#3
 	bl _board_at
 	strb w5,[x10]
+
 	mov lr,x7
 	ret
 //x10 is set to a ptr to the board at a given x (x8) and y (x9)
