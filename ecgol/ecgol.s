@@ -91,12 +91,12 @@ _run_conway:
 		b.eq .done_cell_update
 		cmp w13,#3
 		b.eq .done_cell_update
-		and w12,w12,#2
+		orr w12,w12,#2
 		b .done_cell_update
 		.handle_dead:
 			cmp w13,#3
 			b.ne .done_cell_update
-			and w12,w12,#2
+			orr w12,w12,#2
 		//write back value
 		.done_cell_update:
 		strb w12,[x10]
@@ -119,11 +119,14 @@ _run_conway:
 		cmp w11,#0
 		b.eq .increment_flip_loop
 		eor w12,w12,#1
+		and w12,w12,#1
 		strb w12,[x0]
 		.increment_flip_loop:
 		//increment loop
 		add x2,x2,#1	
 		add x0,x0,#1
+		cmp x2,x1
+		b.lt .flip_loop
 
 	mov lr,x7
 	ret
@@ -195,17 +198,17 @@ _init_board:
 	mov w5,#1
 	//set board at 3,3
 	mov x8,#3
-	mov x9,#3
+	mov x9,#1
 	bl _board_at
 	strb w5,[x10]
 	//set board at 3,4
 	mov x8,#3
-	mov x9,#4
+	mov x9,#2
 	bl _board_at
 	strb w5,[x10]
 	//set board at 3,5
 	mov x8,#3
-	mov x9,#5
+	mov x9,#3
 	bl _board_at
 	strb w5,[x10]
 	mov lr,x7
