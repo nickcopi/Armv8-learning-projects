@@ -41,7 +41,7 @@ _start:
 
 //str ptr ends up on x1 with length read on x0
 _read_input:
-	mov	 x0, #1	
+	mov	 x0, #0
 	ldr	 x1, =input  
 	ldr	 x2, =input_len
 	mov	 w8, #63
