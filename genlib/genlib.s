@@ -37,7 +37,7 @@ _start:
 
 
 _call_funcs:
-	mov	x1, #425
+	mov	x1, #1337
 	ldr	 x2, =input
 	str lr, [sp, #-16]! 
 	str x2, [sp, #-16]! 
@@ -105,14 +105,40 @@ _print:
 	svc	 #0
 	ret
 
+//2 things off stack, first ptr, second length, modifies str in ptr to be reversed
+_str_rev:
+	//pop off str ptr
+	ldr x1, [sp], #16 
+	//pop off str length
+	ldr x2, [sp], #16 
+	cmp x2,#2
+	b.lt .exit_str_rev
+	//ptr to end of str
+	add x3, x1,x2
+	sub x3,x3,#1
+	.str_rev_loop:
+		ldrb w4, [x1]
+		ldrb w5, [x3]
+		strb w5, [x1]
+		strb w4, [x3]
+		add x1,x1,#1
+		sub x3,x3,#1
+		sub x6, x3,x1
+		cmp x6,#0
+		b.gt .str_rev_loop
+	.exit_str_rev:
+	ret
+
 //pops first two things off stack, first being a string ptr, second being an int and converts int to ascii string
 _itoa:
 	//pop off int
 	ldr x1, [sp], #16 
 	//pop off dest str ptr
 	ldr x2, [sp], #16 
+	mov x8, x2
 	mov x3, #10
 	mov x6, #10
+	mov x7, #0
 	
 	//loop until x1 value is 0
 	.itoa_loop:
@@ -141,10 +167,19 @@ _itoa:
 		add x2,x2,#1
 		//multiply mod
 		mul x3,x3,x6
+		//increment counter
+		add x7,x7,#1
 		cmp x1,#0
 		b.ne .itoa_loop
 	mov w4,#0
 	strb w4, [x2]
+	//reverse result
+	str lr, [sp, #-16]! 
+	str x7, [sp, #-16]! 
+	str x8, [sp, #-16]! 
+	bl _str_rev
+	ldr lr, [sp], #16 
+
 	ret
 
 
