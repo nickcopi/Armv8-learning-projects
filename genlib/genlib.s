@@ -1,8 +1,24 @@
 .data
 
 msg:
-	.ascii		"Test text, hello!\n"
+	.ascii		"\337\33[20;20Htest"
 len = . - msg
+
+pxy1:
+	.ascii		"\337\33["
+pxy1_len = . - pxy1
+
+pxy2:
+	.ascii		";"
+pxy2_len = . - pxy2
+
+pxy3:
+	.ascii		"H"
+pxy3_len = . - pxy3
+
+pxy4:
+	.ascii		"\338"
+pxy4_len = . - pxy4
 
 input_len = 24
 input:
@@ -21,6 +37,23 @@ _start:
 
 
 _call_funcs:
+	mov	x1, #425
+	ldr	 x2, =input
+	str lr, [sp, #-16]! 
+	str x2, [sp, #-16]! 
+	str x1, [sp, #-16]! 
+	bl _itoa
+	ldr lr, [sp], #16 
+
+	ldr	 x1, =input
+	ldr	 x2, =input_len
+	str lr, [sp, #-16]! 
+	str x2, [sp, #-16]! 
+	str x1, [sp, #-16]! 
+	bl	_print
+	ldr lr, [sp], #16 
+	ret
+	/*
 	//call print with msg and len
 	ldr	 x1, =msg
 	ldr	 x2, =len
@@ -46,6 +79,7 @@ _call_funcs:
 	bl _atoi
 	ldr x13, [sp], #16 
 	ldr lr, [sp], #16 
+	*/
 
 
 
@@ -58,6 +92,10 @@ _read:
 	svc	 #0
 	ret
 
+//reads top 32 bytes off stack as x and y
+_print_x_y:
+	ret
+
 //reads top 32 bytes off stack as size and str ptr
 _print:
 	mov	 x0, #1
@@ -65,6 +103,48 @@ _print:
 	ldr x2, [sp], #16 
 	mov	 w8, #64
 	svc	 #0
+	ret
+
+//pops first two things off stack, first being a string ptr, second being an int and converts int to ascii string
+_itoa:
+	//pop off int
+	ldr x1, [sp], #16 
+	//pop off dest str ptr
+	ldr x2, [sp], #16 
+	mov x3, #10
+	mov x6, #10
+	
+	//loop until x1 value is 0
+	.itoa_loop:
+		//mod x1 by x3 into x4
+
+		//x1/x3 -> x4
+		//x4 * x3 -> x4
+		//x1-x4 -> x4
+
+		//x1%x3 -> x4
+
+		udiv x4,x1,x3
+		mul x4,x4,x3
+		sub x4,x1,x4
+
+		//remove mod result from int
+		sub x1,x1,x4
+		//reduce result to a single number
+		udiv x5,x3,x6
+		udiv x4,x4,x5
+		//add ascii offset
+		add x4,x4,0x30
+		//store ascii byte back to memory
+		strb w4, [x2]
+		//increment str ptr
+		add x2,x2,#1
+		//multiply mod
+		mul x3,x3,x6
+		cmp x1,#0
+		b.ne .itoa_loop
+	mov w4,#0
+	strb w4, [x2]
 	ret
 
 
