@@ -1,7 +1,7 @@
 .data
 
 msg:
-	.ascii		"\337\33[20;20Htest"
+	.ascii		"test text oh yeah man this is some test text\n"
 len = . - msg
 
 pxy1:
@@ -36,7 +36,31 @@ _start:
 	svc	 #0
 
 
+
 _call_funcs:
+
+	ldr	 x1, =msg
+	ldr	 x2, =msg
+	mov x3,#9
+	add x2,x2,#13
+	str lr, [sp, #-16]! 
+	str x3, [sp, #-16]! 
+	str x2, [sp, #-16]! 
+	str x1, [sp, #-16]! 
+	bl _memcpy
+	ldr lr, [sp], #16 
+
+	//print itoa results
+	ldr	 x1, =msg
+	ldr	 x2, =len
+	str lr, [sp, #-16]! 
+	str x2, [sp, #-16]! 
+	str x1, [sp, #-16]! 
+	bl	_print
+	ldr lr, [sp], #16 
+	ret
+	/*
+	//call itoa
 	mov	x1, #1337
 	ldr	 x2, =input
 	str lr, [sp, #-16]! 
@@ -45,6 +69,7 @@ _call_funcs:
 	bl _itoa
 	ldr lr, [sp], #16 
 
+	//print itoa results
 	ldr	 x1, =input
 	ldr	 x2, =input_len
 	str lr, [sp, #-16]! 
@@ -53,6 +78,7 @@ _call_funcs:
 	bl	_print
 	ldr lr, [sp], #16 
 	ret
+	*/
 	/*
 	//call print with msg and len
 	ldr	 x1, =msg
@@ -104,6 +130,31 @@ _print:
 	mov	 w8, #64
 	svc	 #0
 	ret
+
+//pops 3 values off of stack, dest, src, byte number to move
+_memcpy:
+	//pop off dest ptr
+	ldr x1, [sp], #16 
+	//pop off src ptr
+	ldr x2, [sp], #16 
+	//pop off num bytes to copy
+	ldr x3, [sp], #16 
+	.eight_byte_memcpy:
+		cmp x3,#8
+		b.lt .byte_memcpy
+		ldr x4, [x2], #8
+		str x4, [x1], #8
+		sub x3, x3, #8
+		b .eight_byte_memcpy
+	.byte_memcpy:
+		cmp x3,#1
+		b.lt .exit_memcpy
+		ldrb w4, [x2], #1
+		strb w4, [x1], #1
+		sub x3, x3, #1
+		b .byte_memcpy
+	.exit_memcpy:
+		ret
 
 //2 things off stack, first ptr, second length, modifies str in ptr to be reversed
 _str_rev:
