@@ -1,8 +1,12 @@
 .data
 
 msg:
-	.ascii		"test text oh yeah man this is some test text\n"
+	.ascii		"I am %s cool!\n\0"
 len = . - msg
+
+token_str:
+	.ascii		"%s\0"
+len = . - token_str
 
 pxy1:
 	.ascii		"\337\33["
@@ -40,19 +44,19 @@ _start:
 _call_funcs:
 
 	ldr	 x1, =msg
-	ldr	 x2, =msg
-	mov x3,#9
-	add x2,x2,#13
 	str lr, [sp, #-16]! 
-	str x3, [sp, #-16]! 
+	str x1, [sp, #-16]! 
+	bl _strlen
+	ldr x1, [sp], #16 
+	ldr	 x2, =input
 	str x2, [sp, #-16]! 
 	str x1, [sp, #-16]! 
-	bl _memcpy
+	bl _itoa
 	ldr lr, [sp], #16 
 
 	//print itoa results
-	ldr	 x1, =msg
-	ldr	 x2, =len
+	ldr	 x1, =input
+	ldr	 x2, =input_len
 	str lr, [sp, #-16]! 
 	str x2, [sp, #-16]! 
 	str x1, [sp, #-16]! 
@@ -130,6 +134,61 @@ _print:
 	mov	 w8, #64
 	svc	 #0
 	ret
+
+_strlen:
+	//str ptr to read length of
+	ldr x1, [sp], #16 
+	mov x2,#-1
+	.strlen_loop:
+	add x2,x2,#1
+	ldrb w3, [x1], #1
+	cmp w3,#0
+	b.ne .strlen_loop
+	str x2, [sp, #-16]! 
+	ret
+
+
+//pops 3 values off of stack, dest, src, byte number to move
+_memmove:
+	//pop off dest ptr
+	ldr x1, [sp], #16 
+	//pop off src ptr
+	ldr x2, [sp], #16 
+	//pop off num bytes to copy
+	ldr x3, [sp], #16 
+	//find end of source
+	add x4,x2,x3
+	//see if end of source is past start of dest
+	cmp x4,x1
+	b.lt .do_memcpy
+	//replace src ptr with end-of-source ptr
+	mov x2,x4
+	add x1,x1,x3
+	
+	.eight_byte_memmove:
+		cmp x3,#8
+		b.lt .byte_memmove
+		ldr x4, [x2,#-8]!
+		str x4, [x1,#-8]!
+		sub x3, x3, #8
+		b .eight_byte_memmove
+	.byte_memmove:
+		cmp x3,#1
+		b.lt .exit_memmove
+		ldrb w4, [x2, #-1]!
+		strb w4, [x1, #-1]!
+		sub x3, x3, #1
+		b .byte_memmove
+	.do_memcpy:
+		str lr, [sp, #-16]! 
+		str x3, [sp, #-16]! 
+		str x2, [sp, #-16]! 
+		str x1, [sp, #-16]! 
+		bl _memcpy
+		ldr lr, [sp], #16 
+	.exit_memmove:
+	ret
+
 
 //pops 3 values off of stack, dest, src, byte number to move
 _memcpy:
